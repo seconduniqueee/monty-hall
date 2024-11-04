@@ -5,7 +5,7 @@ Welcome to the Monty Hall Game! This is a console application written in Rust th
 ## Goals
 
 - [x] **Implement regular Monty Hall game.**
-- [ ] **Implement a test mode to see the outcome with a given number of doors and games.**
+- [x] **Implement a test mode to see the outcome with a given number of doors and games.**
 
 ## Description
 
