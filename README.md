@@ -32,5 +32,5 @@ To get started with the Monty Hall game, clone the repository and run the Rust c
 
 ```bash
 git clone https://github.com/seconduniqueee/monty-hall.git
-cd monty-hall-game
+cd monty-hall
 cargo run

@@ -18,6 +18,9 @@ fn main() {
         GameOptionEnum::Test => test_problem(),
         _ => panic!("Whoops, it shouldn't have happened..."),
     }
+
+    println!("\n\nPress Enter to exit...");
+    io::stdin().read_line(&mut String::new()).unwrap();
 }
 
 fn select_option<'a>(options: &'a Vec<GameOption<'a>>) -> Option<&'a GameOption<'a>> {
