@@ -1,3 +1,22 @@
+// For testing this problem (second mode), it is implemented in the way where it follows a natural game flow:
+//  > Enter a number of doors (N), games (M) and the second pick (keep/switch)
+//  > Select random doors for user selection and prize placement
+//  > Between N-1 doors that don't include user selection, N-2 empty doors are randomly selected and revealed
+//  > Second pick option (keep/switch) is applied
+//  > Result is processed and wins counter is updated
+//
+// Knowing the actual logic behind the game and how it really works, we could simplify this:
+//  > Enter a number of doors (N), games (M) and the second pick (keep/switch)
+//  > Select random doors for user selection and prize placement
+//  > If keep was selected - it is a win if user selection and prize placement are the same.
+//  > If switch was selected - it is a win if user selection and prize placement are different.
+//
+// Simplified version would avoid unnecessary loop through all the doors which would result in a higher program speed.
+//
+// Implemented version O(n) -> O(M*N), where M is a number of games, N is a number of doors.
+// Simplified version O(n) -> O(M), where M is a number of games.
+
+
 use inquire::Select;
 use std::io;
 use rand::Rng;
@@ -23,44 +42,23 @@ fn main() {
     io::stdin().read_line(&mut String::new()).unwrap();
 }
 
-fn select_option<'a>(options: &'a Vec<GameOption<'a>>) -> Option<&'a GameOption<'a>> {
-    let selection = Select::new(
-        "Choose an option:",
-        options.iter().map(|item| item.message).collect::<Vec<_>>()
-    )
-        .prompt();
-
-    match selection {
-        Ok(message) => {
-            if let Some(selected_option) = options.iter().find(|item| item.message == message) {
-                return Some(selected_option);
-            }
-
-            return None;
-        }
-        Err(_) => {
-            return None;
-        }
-    }
-}
-
 fn play_regular_game() {
     print_game_instructions();
 
     let range_start = 1;
     let range_max = 3;
     
-    let prize = get_random_int(range_start, range_max);
-    let user_selection = get_user_selection(range_start, range_max);
-    let revealed_door = get_revealed_door(range_start, range_max, prize, user_selection);
+    let prize_placement = get_random_int(range_start, range_max);
+    let user_selection = get_user_selection(range_start, range_max, None);
+    let revealed_door = get_revealed_door(range_start, range_max, prize_placement, user_selection);
     let last_door = get_last_door(range_start, range_max, user_selection, revealed_door);
 
-    print_followup_instructions(revealed_door, last_door);
+    print_game_followup_instructions(revealed_door, last_door);
 
     let is_switched = prompt_to_switch(user_selection, last_door);
     let user_selection = if is_switched { last_door } else { user_selection };
 
-    if prize == user_selection {
+    if prize_placement == user_selection {
         println!("\nYou won a brand new car. Congratulations!");
     } else {
         println!("\nEhh you lost, that's a bummer... But hey, now you have a pet goat!");
@@ -70,11 +68,20 @@ fn play_regular_game() {
 fn test_problem() {
     print_test_instructions();
 
-    let number_of_doors = get_user_selection(1, 1_000);
+    println!("Select the amount of doors (from 1 to 1 000):");
 
-    println!("Enter a number of games to play (from 1 to 1 000 000):");
+    let number_of_doors = get_user_selection(
+        1,
+        1_000,
+        Some("Select the amount of doors (from 1 to 1 000):")
+    );
 
-    let number_of_games = get_user_selection(1, 1_000_000);
+    let number_of_games = get_user_selection(
+        1,
+        1_000_000,
+        Some("Enter a number of games to play (from 1 to 1 000 000):")
+    );
+
     let options = vec![
         GameOption { option: GameOptionEnum::Keep, message: "Always keep initial door" },
         GameOption { option: GameOptionEnum::Switch, message: "Always switch to another door" },
@@ -114,13 +121,15 @@ fn play_test_game(number_of_doors: u64, to_switch: bool) -> bool {
     let mut unrevealed_door = 0;
     let mut candidates = vec![];
 
-    // We could just compare two numbers and get the result, but it's not how the game goes
+    // Here, get all doors that are candidates for being closed
     for door in 1..=number_of_doors {
+        // skip the user door, we should consider candidates all doors except selected
         if door == user_random_selection { continue; }
 
+        // if door with prize is not selected by player, it's the only door that can be left unopened
         if door == door_with_prize {
             unrevealed_door = door;
-            continue
+            break;
         }
 
         let _ = &candidates.push(door);
@@ -148,15 +157,15 @@ fn print_test_results(games_won: f64, number_of_games: f64, number_of_doors: f64
     let ideal_percent: f64 = (number_of_doors - 1.0) / number_of_doors * 100.0;
 
     println!("Here are the results:\n");
-    println!("Played games: {number_of_games}.");
-    println!("Number of doors to pick from: {number_of_doors}.");
+    println!("--- Games played: {number_of_games}.");
+    println!("--- Number of doors to pick from: {number_of_doors}.");
     println!(
-        "Games won: {games_won} ({:.2}%) when {}.\n",
+        "--- Games won: {games_won} ({:.2}%) when {}.\n",
         winning_percent,
         if to_switch { "switching" } else { "keeping the first pick" },
     );
 
-    println!("The ideal percent for {number_of_doors} doors and {number_of_games} games is {ideal_percent:.2}%.\n");
+    println!("--- The ideal percent for {number_of_doors} doors and {number_of_games} games is {ideal_percent:.2}%.\n");
 }
 
 fn print_game_instructions() {
@@ -183,10 +192,9 @@ fn print_test_instructions() {
     println!("The purpose of this is to determine what is the best choice");
     println!("and basically prove the statement that switching is always beneficial");
     println!();
-    println!("Select the amount of doors (from 1 to 1 000):");
 }
 
-fn print_followup_instructions(door_with_goat: u64, last_door: u64) {
+fn print_game_followup_instructions(door_with_goat: u64, last_door: u64) {
     println!("\nWow, that's a solid choice.");
     println!("Listen, I've got a hunch that door#{door_with_goat} is empty. Let's check it out.\n");
     
@@ -232,7 +240,30 @@ fn get_random_int(start: u64, end: u64) -> u64 {
     return random_number;
 }
 
-fn get_user_selection(start: u64, end: u64) -> u64 {
+fn select_option<'a>(options: &'a Vec<GameOption<'a>>) -> Option<&'a GameOption<'a>> {
+    let selection = Select::new(
+        "Choose an option:",
+        options.iter().map(|item| item.message).collect::<Vec<_>>()
+    )
+        .prompt();
+
+    match selection {
+        Ok(message) => {
+            if let Some(selected_option) = options.iter().find(|item| item.message == message) {
+                return Some(selected_option);
+            }
+
+            return None;
+        }
+        Err(_) => {
+            return None;
+        }
+    }
+}
+
+fn get_user_selection(start: u64, end: u64, message: Option<&str>) -> u64 {
+    if let Some(msg) = message { println!("{}", msg); }
+
     loop {
         let mut input = String::new();    
 
@@ -240,20 +271,11 @@ fn get_user_selection(start: u64, end: u64) -> u64 {
             .read_line(&mut input)
             .expect("Failed to read the line\n");
 
-        let result: u64 = match input.trim().parse() {
-            Ok(value) => value,
-            Err(_) => {
-                println!("Please, enter a number between {start} and {end}:");
-                continue;
-            }
-        };
-
-        if result < start || result > end {
-            println!("Please, enter a number between {start} and {end}:");
-            continue;
+        if let Ok(number) = input.trim().parse() {
+            if number >= start && number <= end { return number;}
         }
 
-        return result;
+        println!("Please, enter a number between {start} and {end}:");
     }
 }
 
