@@ -52,20 +52,16 @@ fn play_regular_game() {
     let range_max = 3;
 
     let prize_placement = utils::get_random_int(range_start, range_max);
-    let user_selection = input::get_number_input(range_start, range_max, None);
-    let revealed_door = get_revealed_door(range_start, range_max, prize_placement, user_selection);
-    let last_door = get_last_door(range_start, range_max, user_selection, revealed_door);
+    let selected_door = input::get_number_input(range_start, range_max, None);
+    let revealed_door = get_revealed_door(range_start, range_max, prize_placement, selected_door);
+    let last_door = get_last_door(range_start, range_max, selected_door, revealed_door);
 
     instructions::print_game_followup_instructions(revealed_door, last_door);
 
-    let is_switched = prompt_to_switch(user_selection, last_door);
-    let user_selection = if is_switched { last_door } else { user_selection };
+    let is_switched = prompt_to_switch(selected_door, last_door);
+    let selected_door = if is_switched { last_door } else { selected_door };
 
-    if prize_placement == user_selection {
-        println!("\nYou won a brand new car. Congratulations!");
-    } else {
-        println!("\nEhh you lost, that's a bummer... But hey, now you have a pet goat!");
-    }
+    instructions::print_game_results(prize_placement, selected_door);
 }
 
 fn test_problem() {
