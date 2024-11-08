@@ -21,26 +21,25 @@ pub fn get_number_input(start: u64, end: u64, message: Option<&str>) -> u64 {
     }
 }
 
-
-pub fn get_option_input<'a>(options: &'a Vec<GameOption<'a>>) -> Option<&'a GameOption<'a>> {
+pub fn get_option_input<'opt, 'msg>(options: &'opt Vec<GameOption<'msg>>) -> Option<&'opt GameOption<'msg>> {
     let selection = Select::new(
         "Choose an option:",
         options.iter().map(|item| item.message).collect::<Vec<_>>(),
     )
         .prompt();
 
-    match selection {
+    return match selection {
         Ok(message) => {
             if let Some(selected_option) = options.iter().find(|item| item.message == message) {
-                return Some(selected_option);
+                Some(selected_option);
             }
 
-            return None;
+            None
         }
         Err(_) => {
-            return None;
+            None
         }
-    }
+    };
 }
 
 #[derive(Debug)]
@@ -52,7 +51,7 @@ pub enum GameOptionEnum {
 }
 
 #[derive(Debug)]
-pub struct GameOption<'a> {
+pub struct GameOption<'msg> {
     pub option: GameOptionEnum,
-    pub message: &'a str,
+    pub message: &'msg str,
 }
